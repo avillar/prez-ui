@@ -1,11 +1,14 @@
 import type { InjectionKey } from "vue";
-import type { Quad } from "n3";
+import type { Quad, NamedNode } from "n3";
 
 export type PrezFlavour = "CatPrez" | "SpacePrez" | "VocPrez";
 
 export const mapConfigKey: InjectionKey<MapConfig> = Symbol();
 export const sidenavConfigKey: InjectionKey<boolean> = Symbol();
+export const perPageConfigKey: InjectionKey<number> = Symbol();
+export const conceptPerPageConfigKey: InjectionKey<number> = Symbol();
 export const enabledPrezsConfigKey: InjectionKey<PrezFlavour[]> = Symbol();
+export const enableScoresKey: InjectionKey<boolean> = Symbol();
 export const apiBaseUrlConfigKey: InjectionKey<string> = Symbol();
 
 export interface MapConfig {
@@ -49,8 +52,9 @@ export interface Profile {
     description: string;
     mediatypes: string[];
     defaultMediatype: string;
-    labelPredicate?: string;
-    descPredicate?: string;
+    labelPredicates: string[];
+    descriptionPredicates: string[];
+    explanationPredicates: string[];
 };
 
 export interface Breadcrumb {
@@ -88,7 +92,27 @@ export interface ListItem {
     title?: string;
     description?: string;
     link?: string;
-    type?: string;
+    baseClass?: string;
+    types?: {
+        value: string;
+        qname?: string;
+        label?: string;
+        description?: string;
+    }[];
+    childrenCount?: number;
+};
+
+// extra properies for SortableTable display go in extras
+export interface ListItemExtra extends ListItem {
+    extras: {
+        [key: string]: ListItemSortable
+    };
+}
+
+export interface ListItemSortable {
+    label: string;
+    iri?: string;
+    color?: string;
 };
 
 export interface AnnotatedPredicate {
@@ -98,11 +122,22 @@ export interface AnnotatedPredicate {
     annotations: Quad[];
 };
 
-export interface AnnotatedQuad extends Omit<Quad, "predicate"> {
+export interface AnnotatedObject {
+    termType: "NamedNode" | "Variable" | "Literal" | "BlankNode";
+    value: string;
+    id: string;
+    language?: string;
+    datatype?: NamedNode;
+    annotations: Quad[];
+};
+
+export interface AnnotatedQuad extends Omit<Quad, "predicate" | "object"> {
     predicate: AnnotatedPredicate;
+    object: AnnotatedObject;
 };
 
 export interface RowObj {
+    predIri: string;
     value: string;
     qname?: string;
     datatype?: {
@@ -111,6 +146,7 @@ export interface RowObj {
     };
     language?: string;
     description?: string;
+    explanation?: string;
     termType: string;
     label?: string;
     rows: RowPred[];
@@ -130,15 +166,19 @@ export interface Concept {
     iri: string;
     title: string;
     link: string;
-    children?: Concept[];
-    narrower: string[]; // not used here
-    broader: string; // not used here
+    childrenCount: number;
+    children: Concept[];
+    narrower?: string[];
+    broader?: string;
+    color?: string;
 };
 
 // extending an interface for defineProps in-file causes errors, defined here instead
 export interface ConceptProps extends Concept {
     baseUrl: string;
     collapseAll: boolean;
+    parentPath: string; // used to find where in hierarchy tree to insert narrowers - parentIRI1|parentIRI2|parentIRI3...
+    doNarrowerEmits: boolean;
 };
 
 // export interface PredCellProps extends Omit<RowPred, "order" | "objs"> {};
@@ -149,4 +189,10 @@ export interface PredCellProps {
     label?: string;
     description?: string;
     explanation?: string;
+};
+
+export type languageLabel = {
+    value: string;
+    language?: string;
+    priority: number;
 };

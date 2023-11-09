@@ -55,18 +55,16 @@ PREFIX void: <http://rdfs.org/ns/void#>
 PREFIX prez: <https://prez.dev/>
 `
 
-const featureCollectionQueryPart = (featureCollection:string, config: MapSearchConfig) => ` <${featureCollection}> <${config.spatial.membershipRelationship}> ?f_uri . 
+// need to also select the feature collection URI to generate a link for it in the results
+const featureCollectionQueryPart = (featureCollection:string, config: MapSearchConfig) => `<${featureCollection}> <${config.spatial.membershipRelationship}> ?f_uri . 
 <${featureCollection}> <${config.props.fcLabel}> ?fc_label
 `
 
 /** Constructs a SPARQL query for the SpacePrez map search */
 const mapSearchQuery = (featureCollectionsQueryPart:string, topoQueryPart:string, limit:number, config: MapSearchConfig) => `${mapSearchPrefixPart}
-SELECT ?f_uri ?wkt ?fc_label ?f_label ?p ?o
+SELECT ?f_uri ?wkt ?fc_label ?f_label
 WHERE {
     { ?f_uri geo:hasGeometry/geo:asWKT ?wkt;
-  		?p ?o.
-    VALUES ?p {<${config.props.fId}>}
-    FILTER(DATATYPE(?o)!=prez:slug)
     }
     ${featureCollectionsQueryPart}
     OPTIONAL {?f_uri <${config.props.fcLabel}> ?potential_label }
@@ -93,7 +91,7 @@ const queryTopoFilterPart = (shape:string, areaType: AreaTypes, radius:number) =
 }
 
 /** Constructs the shape query based on a set of coords */
-const shapeQueryPart = (coords: Coords) => {
+export const shapeQueryPart = (coords: Coords) => {
   if(coords.length == 0) {
     return '';
   } else if(coords.length == 1) {

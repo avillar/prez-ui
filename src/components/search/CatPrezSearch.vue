@@ -1,15 +1,13 @@
 <script lang="ts" setup>
-import { ref, onMounted, inject, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { DataFactory } from "n3";
-import { apiBaseUrlConfigKey } from "@/types";
-import { useGetRequest } from "@/composables/api";
+import { useApiRequest } from "@/composables/api";
 import { useRdfStore } from "@/composables/rdfStore";
 
 const { namedNode } = DataFactory;
 
-const apiBaseUrl = inject(apiBaseUrlConfigKey) as string;
-const { data, loading, error, doRequest } = useGetRequest();
-const { store, parseIntoStore, qname } = useRdfStore();
+const { loading, error, apiGetRequest } = useApiRequest();
+const { store, parseIntoStore, qnameToIri } = useRdfStore();
 
 const props = defineProps<{
     defaultSelected?: string;
@@ -34,9 +32,10 @@ watch(() => props.defaultSelected, (newValue, oldValue) => {
     }
 });
 
-onMounted(() => {
-    doRequest(`${apiBaseUrl}/c/catalogs`, () => {
-        parseIntoStore(data.value);
+onMounted(async () => {
+    const { data } = await apiGetRequest("/c/catalogs");
+    if (data && !error.value) {
+        parseIntoStore(data);
 
         store.value.forSubjects(member => {
             let option: CatalogOption = {
@@ -44,13 +43,13 @@ onMounted(() => {
             };
             
             store.value.forEach(q => { // get preds & objs for each subj
-                if (q.predicate.value === qname("rdfs:label")) {
+                if (q.predicate.value === qnameToIri("rdfs:label")) {
                     option.title = q.object.value;
                 }
             }, member, null, null, null);
             options.value.push(option);
-        }, namedNode(qname("a")), namedNode(qname("dcat:Catalog")), null);
-    });
+        }, namedNode(qnameToIri("a")), namedNode(qnameToIri("dcat:Catalog")), null);
+    }
 });
 </script>
 
