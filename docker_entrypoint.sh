@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# insert env vars in index.js
 INDEX_FILE=/app/assets/index.*.js;
 grep "=" .env | while read -r line; do # loop over VITE_ env vars
     left=`echo $line | awk -F "=" '{print $1}'`; # env var name
