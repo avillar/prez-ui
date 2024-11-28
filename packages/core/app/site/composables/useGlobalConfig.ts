@@ -1,13 +1,19 @@
-import { useGetPrezAPIEndpoint } from "@/site/composables/useLib";
-import {getItem} from "~/base/lib";
+import { setConfig } from "@/base/lib/config";
 
 // composables/useGlobalConfig.ts
 export const useGlobalConfig = () => {
     const globalConfig = useState<{config: any, version: string} | null>('globalConfig', () => null);
     const route = useRoute();
     const runtimeConfig = useRuntimeConfig();
-    
-    if (import.meta.server
+    const appConfig = useAppConfig();
+
+    // set the global config for markdown and html detection
+    setConfig({
+      autoMarkdownDetection: !!runtimeConfig.public.prezAutoDetectMarkdown, 
+      autoHtmlDetection: !!runtimeConfig.public.prezAutoDetectHtml
+    });
+
+    if (!import.meta.server
       && typeof localStorage !== 'undefined'
       && runtimeConfig.public.prezAllowApiEndpointChange
       && route.query?.['_api']
@@ -24,6 +30,11 @@ export const useGlobalConfig = () => {
           if(runtimeConfig.public.prezDebug) {
             console.log('globalConfig (debug mode)', data);
           }
+
+          const hasSparql = data.find((item:any)=>item?.['https://prez.dev/sparqlEndpointEnabled']);
+          // update the sparql option if the endpoint supports it
+          updateAppConfig({menu: appConfig.menu.map(item=>item.url === '/sparql' ? {...item, active: !!hasSparql} : item)});
+
           globalConfig.value = {config: data, version: data.find((item:any)=>item?.['https://prez.dev/version'])?.['https://prez.dev/version']?.[0]?.['@value']};
         } catch (err) {
           console.error('Failed to fetch global config', err);
