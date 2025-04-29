@@ -35,7 +35,7 @@
         "preinstall": "npx only-allow pnpm"
     },
     "devDependencies": {
-        "@rdfjs/types": "^1.1.0",
+        "@rdfjs/types": "^1.1.2",
         "@types/n3": "^1.16.4",
         "@vitest/coverage-v8": "^0.34.6",
         "concurrently": "^8.2.2",
